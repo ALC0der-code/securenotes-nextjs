@@ -1,1 +1,0 @@
-self.__REACT_LOADABLE_MANIFEST='{"components/dashboard-client.tsx -> ./vault-content":{"id":6243,"files":["static/chunks/79a130b5.ffbec684cbe68a24.js","static/chunks/315.42448128ac53ec04.js","static/chunks/243.1cc0f8ddb6227c3c.js"]}}';
