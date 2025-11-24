@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { DashboardLayout } from "./dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -10,17 +10,112 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { User, Lock, Bell, Smartphone, Trash2 } from "lucide-react";
+import { User, Lock, Bell, Smartphone, Trash2, Download, Upload, Database } from "lucide-react";
 
 export default function SettingsPageClient() {
   const { data: session } = useSession() || {};
   const [notifications, setNotifications] = useState(true);
   const [twoFactor, setTwoFactor] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleChangeMasterPassword = () => {
     sessionStorage.removeItem("masterPassword");
     toast.success("Master password cleared. You'll be prompted to set a new one.");
     window.location.reload();
+  };
+
+  const handleExportData = async () => {
+    try {
+      const PouchDB = (await import("pouchdb-browser")).default;
+      const db = new PouchDB("securenotes");
+      
+      // Get all documents from the database
+      const result = await db.allDocs({ include_docs: true });
+      const documents = result.rows.map(row => row.doc);
+      
+      // Create export data object
+      const exportData = {
+        exportDate: new Date().toISOString(),
+        version: "1.0",
+        data: documents
+      };
+      
+      // Create a blob and download
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `securenotes-backup-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast.success(`Exported ${documents.length} items successfully!`);
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("Failed to export data");
+    }
+  };
+
+  const handleImportData = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const importData = JSON.parse(text);
+      
+      // Validate the import data structure
+      if (!importData.data || !Array.isArray(importData.data)) {
+        toast.error("Invalid import file format");
+        return;
+      }
+
+      const PouchDB = (await import("pouchdb-browser")).default;
+      const db = new PouchDB("securenotes");
+      
+      let imported = 0;
+      let skipped = 0;
+      
+      // Import each document
+      for (const doc of importData.data) {
+        try {
+          // Check if document already exists
+          try {
+            const existing = await db.get(doc._id);
+            // Document exists, update it
+            await db.put({ ...doc, _rev: existing._rev });
+            imported++;
+          } catch (err) {
+            // Document doesn't exist, create it
+            await db.put(doc);
+            imported++;
+          }
+        } catch (error) {
+          console.error(`Failed to import document ${doc._id}:`, error);
+          skipped++;
+        }
+      }
+      
+      toast.success(`Imported ${imported} items successfully! ${skipped > 0 ? `(${skipped} skipped)` : ''}`);
+      
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      
+      // Reload to reflect changes
+      setTimeout(() => window.location.reload(), 1500);
+    } catch (error) {
+      console.error("Import error:", error);
+      toast.error("Failed to import data. Please check the file format.");
+      
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
   };
 
   const handleClearData = async () => {
@@ -125,6 +220,61 @@ export default function SettingsPageClient() {
                   checked={notifications}
                   onCheckedChange={setNotifications}
                 />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Data Management */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="w-5 h-5" />
+                Data Management
+              </CardTitle>
+              <CardDescription>Import and export your vault data</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <div className="flex items-start gap-2 mb-2">
+                  <Download className="w-5 h-5 text-blue-600 mt-1" />
+                  <div className="flex-1">
+                    <p className="font-medium">Export Data</p>
+                    <p className="text-sm text-gray-500">Download all your notes, passwords, and links as a JSON file</p>
+                  </div>
+                </div>
+                <Button 
+                  variant="outline" 
+                  onClick={handleExportData}
+                  className="w-full"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Export All Data
+                </Button>
+              </div>
+              
+              <div className="pt-4 border-t">
+                <div className="flex items-start gap-2 mb-2">
+                  <Upload className="w-5 h-5 text-green-600 mt-1" />
+                  <div className="flex-1">
+                    <p className="font-medium">Import Data</p>
+                    <p className="text-sm text-gray-500">Restore your data from a previously exported JSON file</p>
+                  </div>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json"
+                  onChange={handleImportData}
+                  className="hidden"
+                />
+                <Button 
+                  variant="outline" 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Import Data
+                </Button>
               </div>
             </CardContent>
           </Card>
