@@ -1,0 +1,1 @@
+"use strict";exports.id=434,exports.ids=[434],exports.modules={21434:(e,t,s)=>{s.r(t),s.d(t,{default:()=>r});let r=(0,s(88895).createProxy)(String.raw`/home/ubuntu/securenotes-nextjs-auth/nextjs_space/components/dashboard-client.tsx#default`)}};
