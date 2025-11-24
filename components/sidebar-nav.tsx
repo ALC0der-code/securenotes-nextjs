@@ -3,6 +3,7 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
+import Image from "next/image";
 import { 
   LayoutDashboard, 
   FileText, 
@@ -66,9 +67,22 @@ export function SidebarNav({ notesCount = 0, passwordsCount = 0, linksCount = 0 
   return (
     <div className="w-64 h-screen bg-white border-r border-gray-200 flex flex-col">
       {/* Logo */}
-      <div className="p-6">
-        <h1 className="text-2xl font-bold text-blue-600">SecureNotes</h1>
-        <p className="text-sm text-gray-500 mt-1">Your secure vault</p>
+      <div className="p-6 border-b border-gray-100">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="relative w-10 h-10 flex-shrink-0">
+            <Image
+              src="/logo.png"
+              alt="SecureNotes Logo"
+              fill
+              className="object-contain"
+              priority
+            />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">SecureNotes</h1>
+            <p className="text-xs text-gray-500">Your secure vault</p>
+          </div>
+        </div>
       </div>
 
       {/* Navigation */}

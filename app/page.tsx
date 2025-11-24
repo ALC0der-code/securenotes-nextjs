@@ -1,5 +1,6 @@
 
 import Link from "next/link";
+import Image from "next/image";
 import { Shield, Lock, Cloud, Zap, Key, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -10,12 +11,20 @@ export default function LandingPage() {
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-2">
-              <Shield className="h-8 w-8 text-blue-600" />
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+            <Link href="/" className="flex items-center gap-3">
+              <div className="relative w-10 h-10">
+                <Image
+                  src="/logo.png"
+                  alt="SecureNotes Logo"
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
+              <span className="text-2xl font-bold text-coral-500">
                 SecureNotes
               </span>
-            </div>
+            </Link>
             <div className="flex items-center gap-3">
               <Link href="/signin">
                 <Button variant="ghost" className="font-medium">
@@ -36,8 +45,14 @@ export default function LandingPage() {
       <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
         <div className="text-center space-y-8">
           <div className="inline-block">
-            <div className="flex items-center justify-center w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-600 shadow-lg">
-              <Lock className="h-10 w-10 text-white" />
+            <div className="relative w-32 h-32 mx-auto mb-6">
+              <Image
+                src="/logo.png"
+                alt="SecureNotes Logo"
+                fill
+                className="object-contain"
+                priority
+              />
             </div>
           </div>
           
@@ -158,8 +173,15 @@ export default function LandingPage() {
       <footer className="border-t border-gray-200 bg-white/80 backdrop-blur-md py-8 mt-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Shield className="h-6 w-6 text-blue-600" />
+            <div className="flex items-center gap-3">
+              <div className="relative w-8 h-8">
+                <Image
+                  src="/logo.png"
+                  alt="SecureNotes Logo"
+                  fill
+                  className="object-contain"
+                />
+              </div>
               <span className="font-semibold text-gray-900">SecureNotes</span>
             </div>
             <p className="text-gray-600 text-sm">

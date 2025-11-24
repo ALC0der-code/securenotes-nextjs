@@ -5,6 +5,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Shield, Mail, Lock, User, Chrome } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -78,9 +79,17 @@ export default function SignUpPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-6">
-            <Shield className="h-10 w-10 text-blue-600" />
-            <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+          <Link href="/" className="inline-flex flex-col items-center gap-4 mb-6">
+            <div className="relative w-24 h-24">
+              <Image
+                src="/logo.png"
+                alt="SecureNotes Logo"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
+            <span className="text-3xl font-bold text-gray-900">
               SecureNotes
             </span>
           </Link>
