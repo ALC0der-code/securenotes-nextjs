@@ -8,8 +8,12 @@ import { NotesTab } from "./vault-tabs/notes-tab";
 import { PasswordsTab } from "./vault-tabs/passwords-tab";
 import { LinksTab } from "./vault-tabs/links-tab";
 
-export function VaultContent() {
-  const [activeTab, setActiveTab] = useState("notes");
+interface VaultContentProps {
+  defaultTab?: "notes" | "passwords" | "links";
+}
+
+export function VaultContent({ defaultTab = "notes" }: VaultContentProps) {
+  const [activeTab, setActiveTab] = useState<string>(defaultTab);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
