@@ -10,13 +10,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { User, Lock, Bell, Smartphone, Trash2, Download, Upload, Database } from "lucide-react";
+import { User, Lock, Bell, Smartphone, Trash2, Download, Upload, Database, FileSpreadsheet } from "lucide-react";
+import Papa from "papaparse";
 
 export default function SettingsPageClient() {
   const { data: session } = useSession() || {};
   const [notifications, setNotifications] = useState(true);
   const [twoFactor, setTwoFactor] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const csvFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleChangeMasterPassword = () => {
     sessionStorage.removeItem("masterPassword");
@@ -114,6 +116,102 @@ export default function SettingsPageClient() {
       // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleImportCSV = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      
+      // Parse CSV using PapaParse
+      Papa.parse(text, {
+        header: true,
+        skipEmptyLines: true,
+        complete: async (results) => {
+          try {
+            const PouchDB = (await import("pouchdb-browser")).default;
+            const db = new PouchDB("securenotes");
+            
+            let imported = 0;
+            let skipped = 0;
+            
+            // Process each row from Evernote CSV
+            for (const row of results.data as any[]) {
+              try {
+                // Evernote CSV typically has columns like: Title, Content, Created, Updated, Tags, URL
+                const title = row.Title || row.title || row.Name || row.name || "Untitled";
+                const content = row.Content || row.content || row.Body || row.body || "";
+                const tags = row.Tags || row.tags || "";
+                const url = row.URL || row.url || row.Link || row.link || "";
+                
+                // Determine type based on content
+                let docType = "note";
+                if (url && url.trim()) {
+                  docType = "link";
+                }
+                
+                // Create document in PouchDB format
+                const doc = {
+                  _id: `${docType}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                  type: docType,
+                  title: title,
+                  content: content,
+                  url: url || undefined,
+                  tags: tags ? tags.split(",").map((t: string) => t.trim()).filter((t: string) => t) : [],
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                  favorite: false
+                };
+                
+                // Save to database
+                await db.put(doc);
+                imported++;
+              } catch (error) {
+                console.error("Failed to import row:", row, error);
+                skipped++;
+              }
+            }
+            
+            toast.success(`Imported ${imported} items from CSV! ${skipped > 0 ? `(${skipped} skipped)` : ''}`);
+            
+            // Reset file input
+            if (csvFileInputRef.current) {
+              csvFileInputRef.current.value = '';
+            }
+            
+            // Reload to reflect changes
+            setTimeout(() => window.location.reload(), 1500);
+          } catch (error) {
+            console.error("CSV import error:", error);
+            toast.error("Failed to import CSV data");
+            
+            // Reset file input
+            if (csvFileInputRef.current) {
+              csvFileInputRef.current.value = '';
+            }
+          }
+        },
+        error: (error: any) => {
+          console.error("CSV parsing error:", error);
+          toast.error("Failed to parse CSV file. Please check the format.");
+          
+          // Reset file input
+          if (csvFileInputRef.current) {
+            csvFileInputRef.current.value = '';
+          }
+        }
+      });
+    } catch (error) {
+      console.error("CSV import error:", error);
+      toast.error("Failed to import CSV file");
+      
+      // Reset file input
+      if (csvFileInputRef.current) {
+        csvFileInputRef.current.value = '';
       }
     }
   };
@@ -256,7 +354,7 @@ export default function SettingsPageClient() {
                 <div className="flex items-start gap-2 mb-2">
                   <Upload className="w-5 h-5 text-green-600 mt-1" />
                   <div className="flex-1">
-                    <p className="font-medium">Import Data</p>
+                    <p className="font-medium">Import Data (JSON)</p>
                     <p className="text-sm text-gray-500">Restore your data from a previously exported JSON file</p>
                   </div>
                 </div>
@@ -273,8 +371,36 @@ export default function SettingsPageClient() {
                   className="w-full"
                 >
                   <Upload className="w-4 h-4 mr-2" />
-                  Import Data
+                  Import JSON File
                 </Button>
+              </div>
+
+              <div className="pt-4 border-t">
+                <div className="flex items-start gap-2 mb-2">
+                  <FileSpreadsheet className="w-5 h-5 text-teal-600 mt-1" />
+                  <div className="flex-1">
+                    <p className="font-medium">Import from Evernote (CSV)</p>
+                    <p className="text-sm text-gray-500">Import notebooks from Evernote CSV export files</p>
+                  </div>
+                </div>
+                <input
+                  ref={csvFileInputRef}
+                  type="file"
+                  accept=".csv"
+                  onChange={handleImportCSV}
+                  className="hidden"
+                />
+                <Button 
+                  variant="outline" 
+                  onClick={() => csvFileInputRef.current?.click()}
+                  className="w-full border-teal-200 text-teal-700 hover:bg-teal-50"
+                >
+                  <FileSpreadsheet className="w-4 h-4 mr-2" />
+                  Import CSV from Evernote
+                </Button>
+                <p className="text-xs text-gray-400 mt-2">
+                  Supports standard Evernote CSV format with Title, Content, Tags, and URL columns
+                </p>
               </div>
             </CardContent>
           </Card>
